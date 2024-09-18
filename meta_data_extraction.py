@@ -11,6 +11,10 @@ def process_svs_files(file_list, svs_directory, output_label_dir, output_macro_d
     """Process a subset of SVS files, extracting and saving label and macro images."""
     for svs_file in file_list:
         file_path = os.path.join(svs_directory, svs_file)
+
+        # Remove the .svs extension from the file name
+        file_name_without_ext = os.path.splitext(svs_file)[0]
+
         try:
             slide = openslide.OpenSlide(file_path)
         except openslide.OpenSlideError as e:
@@ -20,16 +24,16 @@ def process_svs_files(file_list, svs_directory, output_label_dir, output_macro_d
         # Check for and save the label image
         if 'label' in slide.associated_images:
             label_image = slide.associated_images['label']
-            label_image.save(os.path.join(output_label_dir, f"label_{svs_file}.png"))
-            print(f"Label image for {svs_file} saved as label_{svs_file}.png")
+            label_image.save(os.path.join(output_label_dir, f"label_{file_name_without_ext}.png"))
+            print(f"Label image for {svs_file} saved as label_{file_name_without_ext}.png")
         else:
             print(f"No label image found for {svs_file}")
 
         # Check for and save the macro image
         if 'macro' in slide.associated_images:
             macro_image = slide.associated_images['macro']
-            macro_image.save(os.path.join(output_macro_dir, f"macro_{svs_file}.png"))
-            print(f"Macro image for {svs_file} saved as macro_{svs_file}.png")
+            macro_image.save(os.path.join(output_macro_dir, f"macro_{file_name_without_ext}.png"))
+            print(f"Macro image for {svs_file} saved as macro_{file_name_without_ext}.png")
         else:
             print(f"No macro image found for {svs_file}")
 
@@ -47,8 +51,8 @@ def main():
     # Get all SVS files in the directory
     all_svs_files = list_svs_files(svs_directory)
 
-    # subset of files to process 
-    subset_files = all_svs_files[:10]  
+    # Define a subset of files to process (example: first 3 files)
+    subset_files = all_svs_files[:3]  # You can modify this subset as needed
 
     print(f"Processing {len(subset_files)} file(s): {subset_files}")
 
