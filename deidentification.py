@@ -2,6 +2,9 @@ import os
 import shutil
 import struct
 import tiffparser
+import pandas as pd
+
+log_list = []
 
 def delete_associated_image(slide_path, image_type):
     """Remove label or macro image from a given SVS file."""
@@ -68,6 +71,7 @@ def delete_associated_image(slide_path, image_type):
 
 def deidentify_svs_files(input_directory, output_directory, start_idx, end_idx):
     """Deidentify a slice of SVS files in the input directory and save them to the output directory with sequential IDs."""
+    log_dict = {}
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
 
@@ -75,14 +79,21 @@ def deidentify_svs_files(input_directory, output_directory, start_idx, end_idx):
     svs_files = [f for f in os.listdir(input_directory) if f.endswith('.svs')]
 
     # Get the slice of files based on the specified start and end indices
-    sliced_files = svs_files[start_idx:end_idx]
+    #sliced_files = svs_files[start_idx:end_idx]
     
-    for idx, svs_file in enumerate(sliced_files, start=1):
+    for idx, svs_file in enumerate(svs_files, start=1):
         input_path = os.path.join(input_directory, svs_file)
         
         # Create a new name with a sequential ID for each file
-        new_filename = f"{idx:04d}.svs"  # Creates names like 0001.svs, 0002.svs, etc.
+        new_filename = f"DI_{idx:04d}.svs"  
         output_path = os.path.join(output_directory, new_filename)
+        
+        log_dict['Original_file_name'] = svs_file
+        log_dict['Deidentified_file_name'] = new_filename
+        log_dict['input_path'] = input_path
+        log_dict['output_path'] = output_path
+        log_list.append(log_dict)
+
 
         # Copy the original file to the output directory with the new name
         shutil.copyfile(input_path, output_path)
@@ -99,8 +110,8 @@ def deidentify_svs_files(input_directory, output_directory, start_idx, end_idx):
 
 
 if __name__ == "__main__":
-    input_dir = input("Enter the input directory path (with SVS files): ")
-    output_dir = input("Enter the output directory path (to save deidentified files): ")
+    input_dir = "/home/ubuntu/mntdr/dombox1/dombox2"
+    output_dir = "/home/ubuntu/mntdr/dombox1/test/dombox2_files/deidentified_images"
 
     # List available files
     all_svs_files = [f for f in os.listdir(input_dir) if f.endswith('.svs')]
@@ -113,10 +124,11 @@ if __name__ == "__main__":
     for idx, file in enumerate(all_svs_files):
         print(f"{idx}: {file}")
 
-    # Ask the user to enter the range (start and end index) of files to process
-    start_idx = int(input(f"Enter the start index (0 to {len(all_svs_files) - 1}): "))
-    end_idx = int(input(f"Enter the end index (1 to {len(all_svs_files)}): "))
+
 
     # Process the slice of files
-    deidentify_svs_files(input_dir, output_dir, start_idx, end_idx)
+    deidentify_svs_files(input_dir, output_dir)
     print("Deidentification process completed.")
+
+    log_df = pd.DataFrame(log_list)
+    log_df.to_csv('/home/ubuntu/mntdr/dombox1/test/dombox2_files/log_csv/log.csv')
