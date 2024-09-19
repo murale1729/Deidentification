@@ -1,3 +1,5 @@
+import sys
+sys.path.append('/home/ubuntu/bala@path23/bala/Deidentification')
 import os
 import shutil
 import struct
