@@ -69,7 +69,7 @@ def delete_associated_image(slide_path, image_type):
         fp.write(struct.pack(offsetformat, pageifd['next_ifd_value']))
 
 
-def deidentify_svs_files(input_directory, output_directory, start_idx, end_idx):
+def deidentify_svs_files(input_directory, output_directory):
     """Deidentify a slice of SVS files in the input directory and save them to the output directory with sequential IDs."""
     log_dict = {}
     if not os.path.exists(output_directory):
@@ -79,7 +79,7 @@ def deidentify_svs_files(input_directory, output_directory, start_idx, end_idx):
     svs_files = [f for f in os.listdir(input_directory) if f.endswith('.svs')]
 
     # Get the slice of files based on the specified start and end indices
-    #sliced_files = svs_files[start_idx:end_idx]
+    #sliced_files = svs_files[]
     
     for idx, svs_file in enumerate(svs_files, start=1):
         input_path = os.path.join(input_directory, svs_file)
