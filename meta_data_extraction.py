@@ -41,8 +41,8 @@ def process_svs_files(file_list, svs_directory, output_label_dir, output_macro_d
 def main():
     # Define paths
     svs_directory = "/home/ubuntu/mntdr/dombox1/dombox2/"
-    label_output_dir = "/home/ubuntu/mntdr/dombox1/test/output/label_images/"
-    macro_output_dir = "/home/ubuntu/mntdr/dombox1/test/output/macro_images/"
+    label_output_dir = "/home/ubuntu/mntdr/dombox1/test/dombox2_files/label_images/"
+    macro_output_dir = "/home/ubuntu/mntdr/dombox1/test/dombox2_files/macro_images/"
 
     # Ensure output directories exist
     os.makedirs(label_output_dir, exist_ok=True)
@@ -51,8 +51,8 @@ def main():
     # Get all SVS files in the directory
     all_svs_files = list_svs_files(svs_directory)
 
-    # Define a subset of files to process (example: first 3 files)
-    subset_files = all_svs_files[:3]  # You can modify this subset as needed
+    # Define a subset of files to process 
+    subset_files = all_svs_files  
 
     print(f"Processing {len(subset_files)} file(s): {subset_files}")
 
