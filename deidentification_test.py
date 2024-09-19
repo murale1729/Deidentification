@@ -82,9 +82,9 @@ def deidentify_svs_files(input_directory, output_directory):
     svs_files = [f for f in os.listdir(input_directory) if f.endswith('.svs')]
 
     # Get the slice of files based on the specified start and end indices
-    #sliced_files = svs_files[0:10]
+    sliced_files = svs_files[0:10]
     
-    for idx, svs_file in enumerate(svs_files, start=1):
+    for idx, svs_file in enumerate(sliced_files, start=1):
         input_path = os.path.join(input_directory, svs_file)
         
         # Create a new name with a sequential ID for each file
