@@ -98,7 +98,7 @@ def deidentify_svs_files(input_directory, output_directory):
 
 
         # Copy the original file to the output directory with the new name
-        shutil.copyfile(input_path, output_path)
+        shutil.copy(input_path, output_path)
 
         # Deidentify the copied file (removing label and macro images)
         print(f"Deidentifying {output_path}...")
