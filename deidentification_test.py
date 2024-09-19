@@ -1,10 +1,11 @@
+
 import sys
 sys.path.append('/home/ubuntu/bala@path23/bala/Deidentification')
 import os
 import shutil
 import struct
 import tiffparser
-
+import pandas as pd
 
 log_list = []
 
@@ -81,7 +82,7 @@ def deidentify_svs_files(input_directory, output_directory):
     svs_files = [f for f in os.listdir(input_directory) if f.endswith('.svs')]
 
     # Get the slice of files based on the specified start and end indices
-    #sliced_files = svs_files[]
+    #sliced_files = svs_files[0:10]
     
     for idx, svs_file in enumerate(svs_files, start=1):
         input_path = os.path.join(input_directory, svs_file)
@@ -132,18 +133,5 @@ if __name__ == "__main__":
     deidentify_svs_files(input_dir, output_dir)
     print("Deidentification process completed.")
 
-    log_file_path = '/home/ubuntu/mntdr/dombox1/test/dombox2_files/log_csv/log.txt'
-
-# Ensure the directory exists
-log_dir = '/home/ubuntu/mntdr/dombox1/test/dombox2_files/log_csv/'
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
-
-# Writing log_list to the text file
-try:
-    with open(log_file_path, 'w') as log_file:
-        for log_entry in log_list:
-            log_file.write(str(log_entry) + "\n")
-    print("Logs saved successfully.")
-except Exception as e:
-    print(f"Failed to save logs: {e}")
+    log_df = pd.DataFrame(log_list)
+    log_df.to_csv('/home/ubuntu/mntdr/dombox1/test/dombox2_files/log_csv/log.csv')
