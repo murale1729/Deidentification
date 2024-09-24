@@ -8,16 +8,14 @@ params.s3_bucket = "s3://nextflow-bala/Deidentified_Objects/"
 params.log_file = "/home/path01/bala@path23/bala/test/log/log.csv"
 params.batch_size = 1 // Default batch size
 
-// Enable command logging
-process 
-
-
 // Debug input files collection
 def input_files_list = file("${params.input_dir}/*.svs").collect()
 println "Input files collected for processing: ${input_files_list}"
 
 process deidentifyFilesBatch {
-    echo true
+
+    echo true  // Enable logging for this process
+
     input:
     path input_files from input_files_list.collect(batchSize: params.batch_size)
 
