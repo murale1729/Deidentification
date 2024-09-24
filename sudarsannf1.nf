@@ -45,18 +45,17 @@ process deidentifyFiles {
     cp "\$input_file" "\$local_file" || { echo "Failed to copy file"; exit 1; }
 
     # Deidentify the file
-    echo "Deidentifying file: \$local_file"
+   echo "Deidentifying file: \$local_file"
     python3 /home/path01/bala@path23/bala/Deidentification/deidentification_nf.py --input "\$local_file" --output "\$output_file" --log "${params.log_file}"
     
     # Check if the deidentification script succeeded
     if [ \$? -ne 0 ]; then
-        echo "Deidentification failed for file: \$input_file"  # Print a message to indicate failure
+        echo "Deidentification failed for file: \$input_file"
         failed_file="\$input_file"
-        echo "FAILED: \$failed_file" >> "${params.log_file}"  # Log the failed file to the log file
-        echo "Logging failed file: \$input_file"
+        echo "FAILED: \$failed_file" >> "${params.log_file}"
     else
         echo "Deidentification succeeded for file: \$input_file"
-    fi
+    fi
 
     # Clean up local file
     echo "Deleting local file: \$local_file"
