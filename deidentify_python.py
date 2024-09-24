@@ -9,10 +9,13 @@ import tiffparser
 import time  # Import time module
 from datetime import datetime  # For timestamp
 
+# Dictionary to track unique ID for each folder
+folder_file_count = {}
+
 def delete_associated_image(slide_path, image_type):
     """Remove label or macro image from a given SVS file."""
     allowed_image_types = ['label', 'macro']
-    if image_type not in allowed_image_types:
+    if image_type not in allowed image_types:
         raise Exception('Invalid image type requested for deletion')
 
     with open(slide_path, 'r+b') as fp:
@@ -89,7 +92,22 @@ def log_file_update(log_file, svs_file, new_filename, status, time_taken, input_
     log_df = pd.DataFrame([log_dict])
     log_df.to_csv(log_file, mode='a', header=not os.path.exists(log_file), index=False)
 
-def deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file, input_folder, output_folder):
+def generate_unique_filename(folder_name, filename, ext):
+    """Generate a unique filename based on folder name and increasing ID."""
+    # Get the current count of files processed for this folder
+    if folder_name not in folder_file_count:
+        folder_file_count[folder_name] = 0
+
+    # Increment the count for the current folder
+    folder_file_count[folder_name] += 1
+
+    # Create a unique filename with an increasing ID
+    unique_id = folder_file_count[folder_name]
+    new_filename = f"{folder_name}_{unique_id:04d}{ext}"  # Example: foldername_0001.svs
+
+    return new_filename
+
+def deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file, input_folder, output_folder, folder_name):
     """Deidentify a single SVS file using temporary directories."""
     start_time = time.time()  # Start time
     try:
@@ -111,7 +129,12 @@ def deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file,
         end_time = time.time()  # End time
         time_taken = end_time - start_time  # Calculate time taken
 
-        log_file_update(log_file, os.path.basename(input_file), os.path.basename(temp_output_file), 'Success', time_taken, input_folder, output_folder)
+        # Generate unique filename for the output file
+        ext = os.path.splitext(input_file)[1]  # Get file extension (e.g., .svs)
+        unique_filename = generate_unique_filename(folder_name, os.path.basename(input_file), ext)
+
+        # Log the result
+        log_file_update(log_file, os.path.basename(input_file), unique_filename, 'Success', time_taken, input_folder, output_folder)
     except Exception as e:
         print(f"Failed to deidentify {input_file}: {e}")
         end_time = time.time()  # End time in case of failure
@@ -143,8 +166,11 @@ def process_svs_files(input_dir, output_dir, temp_dir, log_file):
 
                 print(f"\nProcessing file: {input_file}")
 
+                # Extract the folder name to use for unique ID generation
+                folder_name = os.path.basename(root)
+
                 # Deidentify the file using temporary folders
-                deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file, root, output_dir)
+                deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file, root, output_dir, folder_name)
 
                 # Build output file path
                 # Retain the directory structure relative to input_dir
@@ -153,7 +179,11 @@ def process_svs_files(input_dir, output_dir, temp_dir, log_file):
                 if not os.path.exists(output_subdir):
                     os.makedirs(output_subdir)
 
-                output_file = os.path.join(output_subdir, filename)
+                # Generate the unique filename
+                ext = os.path.splitext(filename)[1]
+                unique_filename = generate_unique_filename(folder_name, filename, ext)
+
+                output_file = os.path.join(output_subdir, unique_filename)
 
                 print(f"Moving deidentified file to final output directory:\n  Source: {temp_output_file}\n  Destination: {output_file}")
                 # Move the deidentified file to the final output directory
@@ -168,23 +198,4 @@ def process_svs_files(input_dir, output_dir, temp_dir, log_file):
 
     # Clean up temporary folders (remove only if empty)
     try:
-        os.rmdir(temp_input_folder)
-        print(f"Removed temporary input folder: {temp_input_folder}")
-    except OSError:
-        print(f"Temporary input folder not empty or could not be removed: {temp_input_folder}")
-
-    try:
-        os.rmdir(temp_output_folder)
-        print(f"Removed temporary output folder: {temp_output_folder}")
-    except OSError:
-        print(f"Temporary output folder not empty or could not be removed: {temp_output_folder}")
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Deidentify SVS files in a directory using user-specified temporary folders')
-    parser.add_argument('--input_dir', required=True, help='Input directory containing SVS files')
-    parser.add_argument('--output_dir', required=True, help='Output directory to save deidentified SVS files')
-    parser.add_argument('--temp_dir', required=True, help='Temporary directory to store intermediate files')
-    parser.add_argument('--log_file', required=True, help='Log file path')
-    args = parser.parse_args()
-
-    process_svs_files(args.input_dir, args.output_dir, args.temp_dir, args.log_file)
+        os.rmdir
