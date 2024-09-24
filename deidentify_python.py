@@ -138,7 +138,7 @@ def deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file,
         completion_percentage = (file_index / total_files) * 100
 
         # Log the result
-        log_file_update(log_file, os.path.basename(input_file), unique_filename, 'Success', time_taken, input_folder, output_folder, completion_percentage)
+        log_file_update(log_file, os.path.basename(input_file), unique_filename, 'Success', time_taken, input_folder, output_folder)
 
         successful_files += 1
     except Exception as e:
@@ -212,7 +212,7 @@ def process_svs_files(input_dir, output_dir, temp_dir, log_file):
                 print(f"Finished processing file: {input_file}")
                 print("-" * 60)
 
-                print(f"{completion_percentage:.2f}%)
+                print(f"{completion_percentage:.2f}% completed")
 
                 file_index += 1
 
