@@ -10,16 +10,14 @@ params.batch_size = 1 // Default batch size
 
 // Enable command logging
 process 
-{
-    echo = true  // This prints the full command executed for each process
-}
+
 
 // Debug input files collection
 def input_files_list = file("${params.input_dir}/*.svs").collect()
 println "Input files collected for processing: ${input_files_list}"
 
 process deidentifyFilesBatch {
-
+    echo true
     input:
     path input_files from input_files_list.collect(batchSize: params.batch_size)
 
