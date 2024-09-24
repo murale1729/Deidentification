@@ -9,7 +9,8 @@ params.log_file = "/home/path01/bala@path23/bala/test/log/log.csv"
 params.batch_size = 1 // Default batch size
 
 // Enable command logging
-process {
+process 
+{
     echo = true  // This prints the full command executed for each process
 }
 
@@ -43,7 +44,7 @@ process deidentifyFilesBatch {
 
         # Deidentify the file
         echo "Running deidentify.py with --input \$local_file --output \$output_file"
-        python3 scripts/deidentify.py --input \$local_file --output \$output_file --log ${params.log_file} || { echo "Deidentification failed"; exit 1; }
+        python3 /home/path01/bala@path23/bala/Deidentification/deidentification_nf.py --input \$local_file --output \$output_file --log ${params.log_file} || { echo "Deidentification failed"; exit 1; }
 
         # Upload the deidentified file to S3
         echo "Uploading file to S3: aws s3 cp \$output_file ${params.s3_bucket}"
