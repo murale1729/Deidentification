@@ -9,12 +9,17 @@ params.log_file = "/home/path01/bala@path23/bala/test/log/log.csv"
 params.batch_size = 1 // Default batch size
 
 println "Starting Nextflow Script"
+
+// Add this to count and print the number of files found
 println "Files found: ${file(params.input_dir).listFiles().findAll{ it.name.endsWith('.svs') }.size()}"
 
 process deidentifyFilesBatch {
 
     input:
     path input_files from file("${params.input_dir}/*.svs").collect(batchSize: params.batch_size)
+
+    // Adding debug information to see which files are being processed
+    println "Processing files: ${input_files}"
 
     script:
     """
