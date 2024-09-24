@@ -79,7 +79,7 @@ def delete_associated_image(slide_path, image_type):
         fp.seek(previfd['next_ifd_offset'])
         fp.write(struct.pack(offsetformat, pageifd['next_ifd_value']))
 
-def log_file_update(log_file, svs_file, new_filename, status, time_taken, input_folder, output_folder, completion_percentage):
+def log_file_update(log_file, svs_file, new_filename, status, time_taken, input_folder, output_folder):
     """Update the log file with the current file's processing details, including time taken, timestamp, and folders."""
     # Get the current timestamp
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
