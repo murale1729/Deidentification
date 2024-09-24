@@ -14,9 +14,7 @@ def svs_files = file(params.input_dir).listFiles().findAll { it.name.endsWith('.
 println "Files found: ${svs_files.size()}"
 
 // Define the input channel
-Channel
-    .fromPath("${params.input_dir}/*.svs")
-    .into { svs_files_channel }
+def svs_files_channel = Channel.fromPath("${params.input_dir}/*.svs")
 
 process deidentifyFilesBatch {
 
