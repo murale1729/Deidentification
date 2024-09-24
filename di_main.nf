@@ -9,7 +9,7 @@ params.log_file = "/home/path01/bala@path23/bala/test/log/log.csv"
 params.batch_size = 1 // Default batch size
 
 println "Starting Nextflow Script"
-println "Files found: ${file('${params.input_dir}/*.svs').size()}"
+println "Files found: ${file(params.input_dir).listFiles().findAll{ it.name.endsWith('.svs') }.size()}"
 
 process deidentifyFilesBatch {
 
