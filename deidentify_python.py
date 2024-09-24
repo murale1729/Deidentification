@@ -134,9 +134,6 @@ def deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file,
         ext = os.path.splitext(input_file)[1]  # Get file extension (e.g., .svs)
         unique_filename = generate_unique_filename(folder_name, ext)
 
-        # Calculate percentage completion
-        completion_percentage = (file_index / total_files) * 100
-
         # Log the result
         log_file_update(log_file, os.path.basename(input_file), unique_filename, 'Success', time_taken, input_folder, output_folder)
 
