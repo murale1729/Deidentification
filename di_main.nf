@@ -9,14 +9,21 @@ params.log_file = "/home/path01/bala@path23/bala/test/log/log.csv"
 
 println "Starting Nextflow Script"
 
-// Add this to count and print the number of files found
+// Count and print the number of files found
 def svs_files = file(params.input_dir).listFiles().findAll { it.name.endsWith('.svs') }
 println "Files found: ${svs_files.size()}"
 
-process deidentifyFile {
+// Define the input channel
+Channel
+    .fromPath("${params.input_dir}/*.svs")
+    .into { svs_files_channel }
+
+process deidentifyFilesBatch {
+
+    tag { input_file.name }
 
     input:
-    path input_file from file("${params.input_dir}/*.svs")
+    path input_file from svs_files_channel
 
     script:
     """
@@ -55,7 +62,7 @@ process deidentifyFile {
 }
 
 workflow {
-    deidentifyFile()
+    deidentifyFilesBatch()
 }
 
 println "Workflow execution finished"
