@@ -7,6 +7,7 @@ import struct
 import pandas as pd
 import tiffparser
 import time  # Import time module
+from datetime import datetime  # For timestamp
 
 def delete_associated_image(slide_path, image_type):
     """Remove label or macro image from a given SVS file."""
@@ -70,19 +71,25 @@ def delete_associated_image(slide_path, image_type):
         fp.seek(previfd['next_ifd_offset'])
         fp.write(struct.pack(offsetformat, pageifd['next_ifd_value']))
 
-def log_file_update(log_file, svs_file, new_filename, status, time_taken):
-    """Update the log file with the current file's processing details, including time taken."""
+def log_file_update(log_file, svs_file, new_filename, status, time_taken, input_folder, output_folder):
+    """Update the log file with the current file's processing details, including time taken, timestamp, and folders."""
+    # Get the current timestamp
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     log_dict = {
+        'Timestamp': timestamp,
         'Original_file_name': svs_file,
         'Deidentified_file_name': new_filename,
         'Status': status,
-        'Time_Taken_Seconds': time_taken  # Add time taken in seconds
+        'Time_Taken_Seconds': time_taken,  # Add time taken in seconds
+        'Input_Folder': input_folder,  # Log the input folder
+        'Output_Folder': output_folder  # Log the output folder
     }
 
     log_df = pd.DataFrame([log_dict])
     log_df.to_csv(log_file, mode='a', header=not os.path.exists(log_file), index=False)
 
-def deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file):
+def deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file, input_folder, output_folder):
     """Deidentify a single SVS file using temporary directories."""
     start_time = time.time()  # Start time
     try:
@@ -104,12 +111,12 @@ def deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file)
         end_time = time.time()  # End time
         time_taken = end_time - start_time  # Calculate time taken
 
-        log_file_update(log_file, os.path.basename(input_file), os.path.basename(temp_output_file), 'Success', time_taken)
+        log_file_update(log_file, os.path.basename(input_file), os.path.basename(temp_output_file), 'Success', time_taken, input_folder, output_folder)
     except Exception as e:
         print(f"Failed to deidentify {input_file}: {e}")
         end_time = time.time()  # End time in case of failure
         time_taken = end_time - start_time  # Calculate time taken
-        log_file_update(log_file, os.path.basename(input_file), os.path.basename(temp_output_file), f'Failed: {e}', time_taken)
+        log_file_update(log_file, os.path.basename(input_file), os.path.basename(temp_output_file), f'Failed: {e}', time_taken, input_folder, output_folder)
 
 def process_svs_files(input_dir, output_dir, temp_dir, log_file):
     """Process all SVS files in the input directory using user-specified temporary folders."""
@@ -137,7 +144,7 @@ def process_svs_files(input_dir, output_dir, temp_dir, log_file):
                 print(f"\nProcessing file: {input_file}")
 
                 # Deidentify the file using temporary folders
-                deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file)
+                deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file, root, output_dir)
 
                 # Build output file path
                 # Retain the directory structure relative to input_dir
