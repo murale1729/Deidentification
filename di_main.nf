@@ -41,7 +41,7 @@ process deidentifyFilesBatch {
 
     # Deidentify the file
     echo "Deidentifying file: \${local_file}"
-    python3 scripts/deidentify.py --input "\${local_file}" --output "\${output_file}" --log "${params.log_file}" || { echo "Deidentification failed"; exit 1; }
+    python3 deidentification_nf.py --input "\${local_file}" --output "\${output_file}" --log "${params.log_file}" || { echo "Deidentification failed"; exit 1; }
 
     # Upload to S3
     echo "Uploading deidentified file to S3: ${params.s3_bucket}"
