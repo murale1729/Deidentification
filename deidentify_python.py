@@ -202,4 +202,41 @@ def process_svs_files(input_dir, output_dir, temp_dir, log_file):
                 ext = os.path.splitext(filename)[1]
                 unique_filename = generate_unique_filename(folder_name, ext)
 
-                output_file = os.path.join(output_subdir, unique_filename
+                output_file = os.path.join(output_subdir, unique_filename)
+
+                print(f"Moving deidentified file to final output directory:\n  Source: {temp_output_file}\n  Destination: {output_file}")
+                shutil.move(temp_output_file, output_file)
+
+                print(f"Deleting temporary input file: {temp_input_file}")
+                os.remove(temp_input_file)
+
+                print(f"Finished processing file: {input_file}")
+                print("-" * 60)
+
+                file_index += 1
+
+    # Clean up temporary folders (remove only if empty)
+    try:
+        os.rmdir(temp_input_folder)
+        print(f"Removed temporary input folder: {temp_input_folder}")
+    except OSError:
+        print(f"Temporary input folder not empty or could not be removed: {temp_input_folder}")
+
+    try:
+        os.rmdir(temp_output_folder)
+        print(f"Removed temporary output folder: {temp_output_folder}")
+    except OSError:
+        print(f"Temporary output folder not empty or could not be removed: {temp_output_folder}")
+
+    # Print transfer stats
+    print(f"\nTransfer Stats: Successful Files: {successful_files}, Failed Files: {failed_files}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Deidentify SVS files in a directory using user-specified temporary folders')
+    parser.add_argument('--input_dir', required=True, help='Input directory containing SVS files')
+    parser.add_argument('--output_dir', required=True, help='Output directory to save deidentified SVS files')
+    parser.add_argument('--temp_dir', required=True, help='Temporary directory to store intermediate files')
+    parser.add_argument('--log_file', required=True, help='Log file path')
+    args = parser.parse_args()
+
+    process_svs_files(args.input_dir, args.output_dir, args.temp_dir, args.log_file)
