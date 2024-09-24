@@ -46,8 +46,8 @@ process deidentifyFiles {
 
     # Deidentify the file
    echo "Deidentifying file: \$local_file"
-    python3 /home/path01/bala@path23/bala/Deidentification/deidentification_nf.py --input "\$local_file" --output "\$output_file" --log "${params.log_file}"
-    
+    d = python3 /home/path01/bala@path23/bala/Deidentification/deidentification_nf.py --input "\$local_file" --output "\$output_file" --log "${params.log_file}"
+    println d
     # Check if the deidentification script succeeded
     if [ \$? -ne 0 ]; then
         echo "Deidentification failed for file: \$input_file"
