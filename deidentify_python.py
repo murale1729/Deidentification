@@ -20,7 +20,7 @@ failed_files = 0
 def delete_associated_image(slide_path, image_type):
     """Remove label or macro image from a given SVS file."""
     allowed_image_types = ['label', 'macro']
-    if image_type not in allowed_image_types:
+    if image_type not in allowed image_types:
         raise Exception('Invalid image type requested for deletion')
 
     with open(slide_path, 'r+b') as fp:
@@ -91,7 +91,7 @@ def log_file_update(log_file, svs_file, new_filename, status, time_taken, input_
         'Status': status,
         'Time_Taken_Seconds': time_taken,  # Add time taken in seconds
         'Input_Folder': input_folder,  # Log the input folder
-        'Output_Folder': output_folder,  # Log the output folder
+        'Output_Folder': output_folder  # Log the output folder
     }
 
     log_df = pd.DataFrame([log_dict])
@@ -138,12 +138,16 @@ def deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file,
         log_file_update(log_file, os.path.basename(input_file), unique_filename, 'Success', time_taken, input_folder, output_folder)
 
         successful_files += 1
+
+        # Print percentage completed
+        completion_percentage = (file_index / total_files) * 100
+        print(f"Processed {file_index}/{total_files} files ({completion_percentage:.2f}% complete)")
+
     except Exception as e:
         print(f"Failed to deidentify {input_file}: {e}")
         end_time = time.time()  # End time in case of failure
         time_taken = end_time - start_time  # Calculate time taken
-        completion_percentage = (file_index / total_files) * 100
-        log_file_update(log_file, os.path.basename(input_file), os.path.basename(temp_output_file), f'Failed: {e}', time_taken, input_folder, output_folder, completion_percentage)
+        log_file_update(log_file, os.path.basename(input_file), os.path.basename(temp_output_file), f'Failed: {e}', time_taken, input_folder, output_folder)
         failed_files += 1
 
 def process_svs_files(input_dir, output_dir, temp_dir, log_file):
@@ -183,7 +187,7 @@ def process_svs_files(input_dir, output_dir, temp_dir, log_file):
                 print(f"\nProcessing file: {input_file}")
 
                 # Extract the folder name to use for unique ID generation
-                folder_name = os.path.basename(input_dir)
+                folder_name = os.path.basename(root)
 
                 # Deidentify the file using temporary folders
                 deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file, root, output_dir, folder_name, file_index, total_files)
@@ -209,11 +213,7 @@ def process_svs_files(input_dir, output_dir, temp_dir, log_file):
                 print(f"Finished processing file: {input_file}")
                 print("-" * 60)
 
-                
-
                 file_index += 1
-                completion_percentage = (file_index / total_files) * 100
-                print(f"{completion_percentage:.2f}% completed")
 
     # Clean up temporary folders (remove only if empty)
     try:
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Deidentify SVS files in a directory using user-specified temporary folders')
     parser.add_argument('--input_dir', required=True, help='Input directory containing SVS files')
     parser.add_argument('--output_dir', required=True, help='Output directory to save deidentified SVS files')
-    parser.add_argument('--temp_dir', required=True, help='Temporary directory to store intermediate files')
+    parser.add.argument('--temp_dir', required=True, help='Temporary directory to store intermediate files')
     parser.add_argument('--log_file', required=True, help='Log file path')
     args = parser.parse_args()
 
