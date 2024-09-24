@@ -21,10 +21,10 @@ println "Input files collected for processing: ${params.input_dir}"
 
 // Process definition
 process deidentifyFiles {
-
+    
     // Enable debugging of commands for this process
     debug true  
-
+    println "Starting deidentifyFiles"
     input:
         path input_file from input_files_channel
 
