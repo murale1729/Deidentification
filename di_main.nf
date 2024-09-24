@@ -6,61 +6,62 @@ params.local_dir = "/home/path01/bala@path23/bala/test/temp_folder"
 params.output_dir = "/home/path01/bala@path23/bala/test/output_files/deidentified_objects"
 params.s3_bucket = "s3://nextflow-bala/Deidentified_Objects/"
 params.log_file = "/home/path01/bala@path23/bala/test/log/log.csv"
+params.batch_size = 1 // Default batch size
 
-println "Starting Nextflow Script"
+// Enable trace to log commands
+trace
 
-// Count and print the number of files found
-def svs_files = file(params.input_dir).listFiles().findAll { it.name.endsWith('.svs') }
-println "Files found: ${svs_files.size()}"
-
-// Define the input channel
-def svs_files_channel = Channel.fromPath("${params.input_dir}/*.svs")
+// Debug input files collection
+def input_files_list = file("${params.input_dir}/*.svs").collect()
+println "Input files collected for processing: ${input_files_list}"
 
 process deidentifyFilesBatch {
 
-    tag { input_file.name }
-
     input:
-    path input_file from svs_files_channel
+    path input_files from input_files_list.collect(batchSize: params.batch_size)
 
     script:
     """
-    echo "---------------------------------------------------"
-    echo "Processing file: ${input_file}"
+    echo "Processing files in batch: \$input_files"
+    
+    for input_file in \$input_files; do
+        echo "---------------------------------------------------"
+        echo "Processing file: \$input_file"
 
-    # Extract the folder prefix (directory name)
-    folder_prefix=\$(basename \$(dirname "${input_file}"))
+        # Extract the folder prefix (directory name)
+        folder_prefix=\$(basename \$(dirname \$input_file))
 
-    # Define the local file path and output file path
-    local_file="${params.local_dir}/\${folder_prefix}_\$(basename "${input_file}")"
-    output_file="${params.output_dir}/\${folder_prefix}_DI_\$(basename "${input_file}")"
+        # Define the local file path and output file path
+        local_file=${params.local_dir}/\${folder_prefix}_\$(basename \$input_file)
+        output_file=${params.output_dir}/\${folder_prefix}_DI_\$(basename \$input_file)
 
-    # Copy the input file to the local directory
-    echo "Copying file to local directory: \${local_file}"
-    cp "${input_file}" "\${local_file}" || { echo "Failed to copy file"; exit 1; }
+        # Copy the input file to the local directory
+        echo "cp \$input_file \$local_file"
+        cp \$input_file \$local_file || { echo "Failed to copy file"; exit 1; }
 
-    # Deidentify the file
-    echo "Deidentifying file: \${local_file}"
-    python3 deidentification_nf.py --input "\${local_file}" --output "\${output_file}" --log "${params.log_file}" || { echo "Deidentification failed"; exit 1; }
+        # Deidentify the file
+        echo "Running deidentify.py with --input \$local_file --output \$output_file"
+        python3 scripts/deidentify.py --input \$local_file --output \$output_file --log ${params.log_file} || { echo "Deidentification failed"; exit 1; }
 
-    # Upload to S3
-    echo "Uploading deidentified file to S3: ${params.s3_bucket}"
-    aws s3 cp "\${output_file}" "${params.s3_bucket}" || { echo "S3 upload failed"; exit 1; }
+        # Upload the deidentified file to S3
+        echo "Uploading file to S3: aws s3 cp \$output_file ${params.s3_bucket}"
+        aws s3 cp \$output_file ${params.s3_bucket} || { echo "S3 upload failed"; exit 1; }
 
-    # Delete local files
-    echo "Deleting local file: \${local_file}"
-    rm "\${local_file}" || { echo "Failed to delete local file"; exit 1; }
+        # Clean up local files
+        echo "Deleting local file: \$local_file"
+        rm \$local_file || { echo "Failed to delete local file"; exit 1; }
 
-    echo "Deleting deidentified output file: \${output_file}"
-    rm "\${output_file}" || { echo "Failed to delete output file"; exit 1; }
+        echo "Deleting deidentified output file: \$output_file"
+        rm \$output_file || { echo "Failed to delete output file"; exit 1; }
 
-    echo "Finished processing file: ${input_file}"
-    echo "---------------------------------------------------"
+        echo "Finished processing file: \$input_file"
+        echo "---------------------------------------------------"
+    done
     """
 }
 
 workflow {
-    deidentifyFilesBatch()
+    deidentifyFilesBatch
 }
 
 println "Workflow execution finished"
