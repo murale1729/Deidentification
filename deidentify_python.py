@@ -212,9 +212,11 @@ def process_svs_files(input_dir, output_dir, temp_dir, log_file):
                 print(f"Finished processing file: {input_file}")
                 print("-" * 60)
 
-                print(f"{completion_percentage:.2f}% completed")
+                
 
                 file_index += 1
+                completion_percentage = (file_index / total_files) * 100
+                print(f"{completion_percentage:.2f}% completed")
 
     # Clean up temporary folders (remove only if empty)
     try:
