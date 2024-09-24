@@ -26,7 +26,7 @@ process deidentifyFiles {
     debug true  
     println "Starting deidentifyFiles"
     input:
-        path input_file from input_files_channel
+        path input_file
 
     script:
     """
@@ -61,9 +61,14 @@ process deidentifyFiles {
 }
 
 workflow {
-    println "Workflow execution Started"
-    deidentifyFiles()
+    // Create the input channel
+    input_files_channel = Channel.fromPath("${params.input_dir}/*.svs")
+
+    // Pass the input channel to the process
+    deidentifyFiles(input_files_channel)
+    println "Workflow execution finished"
+    println "Results saved to: ${params.output_dir}"
 }
 
-println "Workflow execution finished"
-println "Results saved to: ${params.output_dir}"
+
+
