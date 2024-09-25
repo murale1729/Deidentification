@@ -14,7 +14,6 @@ import subprocess
 folder_file_count = {}
 
 # Counters for tracking success and failure
-total_files = 0
 successful_files = 0
 failed_files = 0
 
@@ -108,18 +107,12 @@ def generate_unique_filename(folder_name, ext):
     new_filename = f"DI_{folder_name}_{unique_id:04d}{ext}"
     return new_filename
 
-def deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file, input_folder, output_folder, folder_name, file_index, total_files):
+def deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file, input_folder, output_folder, folder_name):
     """Deidentify a single SVS file using temporary directories."""
     global successful_files, failed_files
 
     start_time = time.time()  # Start time
     try:
-        print(f"Copying input file to temporary input folder:\n  Source: {input_file}\n  Destination: {temp_input_file}")
-        shutil.copy(input_file, temp_input_file)
-
-        print(f"Copying file from temporary input to temporary output folder:\n  Source: {temp_input_file}\n  Destination: {temp_output_file}")
-        shutil.copy(temp_input_file, temp_output_file)
-
         print(f"Deidentifying file: {temp_output_file}")
         delete_associated_image(temp_output_file, 'label')
         delete_associated_image(temp_output_file, 'macro')
@@ -136,9 +129,6 @@ def deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file,
 
         successful_files += 1
 
-        completion_percentage = (file_index / total_files) * 100
-        print(f"Processed {file_index}/{total_files} files ({completion_percentage:.2f}% complete)")
-
     except Exception as e:
         print(f"Failed to deidentify {input_file}: {e}")
         end_time = time.time()
@@ -146,95 +136,72 @@ def deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file,
         log_file_update(log_file, os.path.basename(input_file), os.path.basename(temp_output_file), f'Failed: {e}', time_taken, input_folder, output_folder)
         failed_files += 1
 
-def process_svs_files(input_dir, output_dir, temp_dir, log_file):
-    """Process all SVS files in the input directory using user-specified temporary folders."""
-    global total_files
+def process_single_svs_file(s3_bucket_input, s3_bucket_output, temp_dir, log_file):
+    """Process each SVS file one by one from the input S3 bucket."""
+    global successful_files, failed_files
 
-    total_files = sum(len(files) for _, _, files in os.walk(input_dir) if any(f.lower().endswith('.svs') for f in files))
-
-    if total_files == 0:
-        print("No SVS files found.")
-        return
-
-    temp_input_folder = os.path.join(temp_dir, 'temp_input_folder')
-    temp_output_folder = os.path.join(temp_dir, 'temp_output_folder')
+    temp_input_folder = os.path.join(temp_dir, 'temp_input')
+    temp_output_folder = os.path.join(temp_dir, 'temp_output')
 
     os.makedirs(temp_input_folder, exist_ok=True)
     os.makedirs(temp_output_folder, exist_ok=True)
 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    if not os.path.exists(os.path.dirname(log_file)):
-        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+    # List files in the S3 bucket
+    try:
+        result = subprocess.run(['aws', 's3', 'ls', s3_bucket_input], capture_output=True, text=True, check=True)
+        svs_files = [line.split()[-1] for line in result.stdout.splitlines() if line.endswith('.svs')]
+    except subprocess.CalledProcessError as e:
+        print(f"Error listing files from S3: {e}")
+        return
 
-    file_index = 1
+    if not svs_files:
+        print("No SVS files found.")
+        return
 
-    for root, dirs, files in os.walk(input_dir):
-        for filename in files:
-            if filename.lower().endswith('.svs'):
-                input_file = os.path.join(root, filename)
+    for svs_file in svs_files:
+        # Download the file from S3
+        input_file = os.path.join(temp_input_folder, svs_file)
+        try:
+            subprocess.run(['aws', 's3', 'cp', f"{s3_bucket_input}/{svs_file}", input_file], check=True)
+            print(f"Downloaded file: {input_file}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error downloading {svs_file}: {e}")
+            continue
 
-                temp_input_file = os.path.join(temp_input_folder, filename)
-                temp_output_file = os.path.join(temp_output_folder, filename)
+        # Define the output file path
+        temp_input_file = input_file
+        temp_output_file = os.path.join(temp_output_folder, svs_file)
 
-                print(f"\nProcessing file: {input_file}")
+        try:
+            # Copy the input file to output folder for processing
+            shutil.copy(temp_input_file, temp_output_file)
 
-                folder_name = os.path.basename(root)
+            # Extract folder name for unique filename generation
+            folder_name = os.path.basename(temp_input_folder)
 
-                deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file, root, output_dir, folder_name, file_index, total_files)
+            # Deidentify the file
+            deidentify_svs_file(input_file, temp_input_file, temp_output_file, log_file, s3_bucket_input, s3_bucket_output, folder_name)
 
-                relative_path = os.path.relpath(root, input_dir)
-                output_subdir = os.path.join(output_dir, relative_path)
-                if not os.path.exists(output_subdir):
-                    os.makedirs(output_subdir)
+            # Upload the deidentified file to S3
+            try:
+                subprocess.run(['aws', 's3', 'cp', temp_output_file, f"{s3_bucket_output}/{svs_file}"], check=True)
+                print(f"Uploaded file to S3: {s3_bucket_output}/{svs_file}")
+            except subprocess.CalledProcessError as e:
+                print(f"Error uploading {svs_file} to S3: {e}")
+                continue
 
-                ext = os.path.splitext(filename)[1]
-                unique_filename = generate_unique_filename(folder_name, ext)
-
-                output_file = os.path.join(output_subdir, unique_filename)
-
-                print(f"Moving deidentified file to final output directory:\n  Source: {temp_output_file}\n  Destination: {output_file}")
-                shutil.move(temp_output_file, output_file)
-
-                print(f"Deleting temporary input file: {temp_input_file}")
+        finally:
+            # Clean up local files
+            if os.path.exists(temp_input_file):
                 os.remove(temp_input_file)
+                print(f"Deleted local input file: {temp_input_file}")
 
-                print(f"Finished processing file: {input_file}")
-                print("-" * 60)
+            if os.path.exists(temp_output_file):
+                os.remove(temp_output_file)
+                print(f"Deleted local output file: {temp_output_file}")
 
-                file_index += 1
-
-    try:
-        os.rmdir(temp_input_folder)
-        print(f"Removed temporary input folder: {temp_input_folder}")
-    except OSError:
-        print(f"Temporary input folder not empty or could not be removed: {temp_input_folder}")
-
-    try:
-        os.rmdir(temp_output_folder)
-        print(f"Removed temporary output folder: {temp_output_folder}")
-    except OSError:
-        print(f"Temporary output folder not empty or could not be removed: {temp_output_folder}")
-
+    # Print transfer stats
     print(f"\nTransfer Stats: Successful Files: {successful_files}, Failed Files: {failed_files}")
-
-def sync_from_s3(input_s3_bucket, local_input_dir):
-    """Sync files from the input S3 bucket to the local directory."""
-    try:
-        print(f"Syncing files from S3 bucket {input_s3_bucket} to {local_input_dir}")
-        subprocess.run(['aws', 's3', 'sync', input_s3_bucket, local_input_dir], check=True)
-        print(f"Successfully synced from {input_s3_bucket}")
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to sync from S3 bucket {input_s3_bucket}: {e}")
-
-def sync_to_s3(output_dir, s3_bucket):
-    """Sync local output directory to S3 bucket."""
-    try:
-        print(f"Syncing {output_dir} to S3 bucket {s3_bucket}")
-        subprocess.run(['aws', 's3', 'sync', output_dir, s3_bucket], check=True)
-        print(f"Successfully synced {output_dir} to {s3_bucket}")
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to sync {output_dir} to S3: {e}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Deidentify SVS files in a directory using user-specified temporary folders')
@@ -244,14 +211,5 @@ if __name__ == "__main__":
     parser.add_argument('--log_file', required=True, help='Log file path')
     args = parser.parse_args()
 
-    local_input_dir = os.path.join(args.temp_dir, 'local_input')
-    local_output_dir = os.path.join(args.temp_dir, 'local_output')
-
-    # Sync files from S3 to the local temp input directory
-    sync_from_s3(args.input_s3_bucket, local_input_dir)
-
-    # Process the files locally
-    process_svs_files(local_input_dir, local_output_dir, args.temp_dir, args.log_file)
-
-    # Sync the output files to the S3 bucket
-    sync_to_s3(local_output_dir, args.output_s3_bucket)
+    # Process the SVS files one by one
+    process_single_svs_file(args.input_s3_bucket, args.output_s3_bucket, args.temp_dir, args.log_file)
