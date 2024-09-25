@@ -140,7 +140,7 @@ def process_single_svs_file(s3_bucket_input, s3_bucket_output, temp_dir, log_fil
     """Process each SVS file one by one from the input S3 bucket."""
     global successful_files, failed_files
 
-    temp_input_folder = os.path.join(temp_dir, 'domSpeciallymphoma')
+    temp_input_folder = os.path.join(temp_dir, 'domSpeciallymphoma_domslbox1')
     temp_output_folder = os.path.join(temp_dir, 'temp_output')
 
     os.makedirs(temp_input_folder, exist_ok=True)
