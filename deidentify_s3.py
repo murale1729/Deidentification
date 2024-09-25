@@ -146,10 +146,24 @@ def process_single_svs_file(s3_bucket_input, s3_bucket_output, temp_dir, log_fil
     os.makedirs(temp_input_folder, exist_ok=True)
     os.makedirs(temp_output_folder, exist_ok=True)
 
+    # Ensure s3_bucket_input and s3_bucket_output have correct prefixes
+    if not s3_bucket_input.startswith('s3://'):
+        s3_bucket_input = 's3://' + s3_bucket_input.rstrip('/')
+    else:
+        s3_bucket_input = s3_bucket_input.rstrip('/')
+
+    if not s3_bucket_output.startswith('s3://'):
+        s3_bucket_output = 's3://' + s3_bucket_output.rstrip('/')
+    else:
+        s3_bucket_output = s3_bucket_output.rstrip('/')
+
     # List files in the S3 bucket
     try:
-        result = subprocess.run(['aws', 's3', 'ls', s3_bucket_input], capture_output=True, text=True, check=True)
-        svs_files = [line.split()[-1] for line in result.stdout.splitlines() if line.endswith('.svs')]
+        result = subprocess.run(['aws', 's3', 'ls', s3_bucket_input + '/'], capture_output=True, text=True, check=True, timeout=60)
+        svs_files = [line.split()[-1] for line in result.stdout.splitlines() if line.strip().endswith('.svs')]
+    except subprocess.TimeoutExpired:
+        print(f"Timeout occurred while listing files in {s3_bucket_input}")
+        return
     except subprocess.CalledProcessError as e:
         print(f"Error listing files from S3: {e}")
         return
@@ -162,15 +176,19 @@ def process_single_svs_file(s3_bucket_input, s3_bucket_output, temp_dir, log_fil
         # Download the file from S3
         input_file = os.path.join(temp_input_folder, svs_file)
         try:
-            s3_file_path = f"{s3_bucket_input}/{svs_file}".replace("//", "/")  # Fix double slash
+            s3_file_path = f"{s3_bucket_input}/{svs_file}"
+
             # Check if the file exists in S3 before trying to download
-            check_result = subprocess.run(['aws', 's3', 'ls', s3_file_path], capture_output=True, text=True)
-            if not check_result.stdout:  # No output means the file does not exist
+            check_result = subprocess.run(['aws', 's3', 'ls', s3_file_path], capture_output=True, text=True, timeout=60)
+            if not check_result.stdout:
                 print(f"File not found in S3: {s3_file_path}")
                 continue
 
-            subprocess.run(['aws', 's3', 'cp', s3_file_path, input_file], check=True)
+            subprocess.run(['aws', 's3', 'cp', s3_file_path, input_file], check=True, timeout=3600)
             print(f"Downloaded file: {input_file}")
+        except subprocess.TimeoutExpired:
+            print(f"Timeout occurred while accessing {s3_file_path}")
+            continue
         except subprocess.CalledProcessError as e:
             print(f"Error downloading {svs_file}: {e}")
             continue
@@ -191,8 +209,13 @@ def process_single_svs_file(s3_bucket_input, s3_bucket_output, temp_dir, log_fil
 
             # Upload the deidentified file to S3
             try:
-                subprocess.run(['aws', 's3', 'cp', temp_output_file, f"{s3_bucket_output}/{svs_file}"], check=True)
-                print(f"Uploaded file to S3: {s3_bucket_output}/{svs_file}")
+                unique_filename = generate_unique_filename(folder_name, os.path.splitext(svs_file)[1])
+                s3_output_path = f"{s3_bucket_output}/{unique_filename}"
+                subprocess.run(['aws', 's3', 'cp', temp_output_file, s3_output_path], check=True, timeout=3600)
+                print(f"Uploaded file to S3: {s3_output_path}")
+            except subprocess.TimeoutExpired:
+                print(f"Timeout occurred while uploading {svs_file} to {s3_bucket_output}")
+                continue
             except subprocess.CalledProcessError as e:
                 print(f"Error uploading {svs_file} to S3: {e}")
                 continue
@@ -212,8 +235,8 @@ def process_single_svs_file(s3_bucket_input, s3_bucket_output, temp_dir, log_fil
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Deidentify SVS files in a directory using user-specified temporary folders')
-    parser.add_argument('--input_s3_bucket', required=True, help='Input S3 bucket containing SVS files')
-    parser.add_argument('--output_s3_bucket', required=True, help='Output S3 bucket to save deidentified SVS files')
+    parser.add_argument('--input_s3_bucket', required=True, help='Input S3 bucket containing SVS files (e.g., s3://mybucket/path)')
+    parser.add_argument('--output_s3_bucket', required=True, help='Output S3 bucket to save deidentified SVS files (e.g., s3://mybucket/output_path)')
     parser.add_argument('--temp_dir', required=True, help='Temporary directory to store intermediate files')
     parser.add_argument('--log_file', required=True, help='Log file path')
     args = parser.parse_args()
