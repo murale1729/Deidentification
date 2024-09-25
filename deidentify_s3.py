@@ -162,7 +162,14 @@ def process_single_svs_file(s3_bucket_input, s3_bucket_output, temp_dir, log_fil
         # Download the file from S3
         input_file = os.path.join(temp_input_folder, svs_file)
         try:
-            subprocess.run(['aws', 's3', 'cp', f"{s3_bucket_input}/{svs_file}", input_file], check=True)
+            s3_file_path = f"{s3_bucket_input}/{svs_file}".replace("//", "/")  # Fix double slash
+            # Check if the file exists in S3 before trying to download
+            check_result = subprocess.run(['aws', 's3', 'ls', s3_file_path], capture_output=True, text=True)
+            if not check_result.stdout:  # No output means the file does not exist
+                print(f"File not found in S3: {s3_file_path}")
+                continue
+
+            subprocess.run(['aws', 's3', 'cp', s3_file_path, input_file], check=True)
             print(f"Downloaded file: {input_file}")
         except subprocess.CalledProcessError as e:
             print(f"Error downloading {svs_file}: {e}")
@@ -205,11 +212,4 @@ def process_single_svs_file(s3_bucket_input, s3_bucket_output, temp_dir, log_fil
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Deidentify SVS files in a directory using user-specified temporary folders')
-    parser.add_argument('--input_s3_bucket', required=True, help='Input S3 bucket containing SVS files')
-    parser.add_argument('--output_s3_bucket', required=True, help='Output S3 bucket to save deidentified SVS files')
-    parser.add_argument('--temp_dir', required=True, help='Temporary directory to store intermediate files')
-    parser.add_argument('--log_file', required=True, help='Log file path')
-    args = parser.parse_args()
-
-    # Process the SVS files one by one
-    process_single_svs_file(args.input_s3_bucket, args.output_s3_bucket, args.temp_dir, args.log_file)
+    parser.add_argument('--input_s3_bucket', required=True, help='Input
