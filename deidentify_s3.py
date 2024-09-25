@@ -212,4 +212,11 @@ def process_single_svs_file(s3_bucket_input, s3_bucket_output, temp_dir, log_fil
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Deidentify SVS files in a directory using user-specified temporary folders')
-    parser.add_argument('--input_s3_bucket', required=True, help='Input
+    parser.add_argument('--input_s3_bucket', required=True, help='Input S3 bucket containing SVS files')
+    parser.add_argument('--output_s3_bucket', required=True, help='Output S3 bucket to save deidentified SVS files')
+    parser.add_argument('--temp_dir', required=True, help='Temporary directory to store intermediate files')
+    parser.add_argument('--log_file', required=True, help='Log file path')
+    args = parser.parse_args()
+
+    # Process the SVS files one by one
+    process_single_svs_file(args.input_s3_bucket, args.output_s3_bucket, args.temp_dir, args.log_file)
