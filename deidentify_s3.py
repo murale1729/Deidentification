@@ -103,7 +103,7 @@ def generate_unique_filename(folder_name, ext):
 
     folder_file_count[folder_name] += 1
 
-    unique_id = 601 + folder_file_count[folder_name]
+    unique_id = folder_file_count[folder_name]
     new_filename = f"DI_{folder_name}_{unique_id:04d}{ext}"
     return new_filename
 
@@ -161,8 +161,8 @@ def process_single_svs_file(s3_bucket_input, s3_bucket_output, temp_dir, log_fil
     try:
         result = subprocess.run(['aws', 's3', 'ls', s3_bucket_input + '/'], capture_output=True, text=True, check=True, timeout=60)
         # Handle spaces in filenames by splitting with maxsplit=3 to get only 4 parts (date, time, size, filename)
-        #svs_files = [line.split(maxsplit=3)[-1] for line in result.stdout.splitlines() if line.strip().endswith('.svs')]
-        svs_files = [line.split(maxsplit=3)[-1] for line in result.stdout.splitlines() if line.strip().endswith('.svs') and ' ' in line.split(maxsplit=3)[-1]] # To fix missing Files
+        svs_files = [line.split(maxsplit=3)[-1] for line in result.stdout.splitlines() if line.strip().endswith('.svs')]
+        #svs_files = [line.split(maxsplit=3)[-1] for line in result.stdout.splitlines() if line.strip().endswith('.svs') and ' ' in line.split(maxsplit=3)[-1]] # To fix missing Files
          
     except subprocess.TimeoutExpired:
         print(f"Timeout occurred while listing files in {s3_bucket_input}")
