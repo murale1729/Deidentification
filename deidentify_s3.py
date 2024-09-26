@@ -140,7 +140,7 @@ def process_single_svs_file(s3_bucket_input, s3_bucket_output, temp_dir, log_fil
     """Process each SVS file one by one from the input S3 bucket."""
     global successful_files, failed_files
 
-    temp_input_folder = os.path.join(temp_dir, 'domboxDec2016')
+    temp_input_folder = os.path.join(temp_dir, 'dombox3')
     temp_output_folder = os.path.join(temp_dir, 'temp_output')
 
     os.makedirs(temp_input_folder, exist_ok=True)
@@ -161,7 +161,9 @@ def process_single_svs_file(s3_bucket_input, s3_bucket_output, temp_dir, log_fil
     try:
         result = subprocess.run(['aws', 's3', 'ls', s3_bucket_input + '/'], capture_output=True, text=True, check=True, timeout=60)
         # Handle spaces in filenames by splitting with maxsplit=3 to get only 4 parts (date, time, size, filename)
-        svs_files = [line.split(maxsplit=3)[-1] for line in result.stdout.splitlines() if line.strip().endswith('.svs')]
+        #svs_files = [line.split(maxsplit=3)[-1] for line in result.stdout.splitlines() if line.strip().endswith('.svs')]
+        svs_files = [line.split(maxsplit=3)[-1] for line in result.stdout.splitlines() if line.strip().endswith('.svs') and ' ' in line.split(maxsplit=3)[-1]] # To fix missing Files
+         
     except subprocess.TimeoutExpired:
         print(f"Timeout occurred while listing files in {s3_bucket_input}")
         return
