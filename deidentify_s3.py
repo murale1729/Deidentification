@@ -103,7 +103,7 @@ def generate_unique_filename(folder_name, ext):
 
     folder_file_count[folder_name] += 1
 
-    unique_id = folder_file_count[folder_name]
+    unique_id = 375 + folder_file_count[folder_name]
     new_filename = f"DI_{folder_name}_{unique_id:04d}{ext}"
     return new_filename
 
