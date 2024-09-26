@@ -20,7 +20,7 @@ failed_files = 0
 def delete_associated_image(slide_path, image_type):
     """Remove label or macro image from a given SVS file."""
     allowed_image_types = ['label', 'macro']
-    if image_type not in allowed_image_types:
+    if image_type not in allowed image_types:
         raise Exception('Invalid image type requested for deletion')
 
     with open(slide_path, 'r+b') as fp:
@@ -140,7 +140,7 @@ def process_single_svs_file(s3_bucket_input, s3_bucket_output, temp_dir, log_fil
     """Process each SVS file one by one from the input S3 bucket."""
     global successful_files, failed_files
 
-    temp_input_folder = os.path.join(temp_dir, 'domSpeciallymphoma_domslbox2')
+    temp_input_folder = os.path.join(temp_dir, 'domboxDec2016')
     temp_output_folder = os.path.join(temp_dir, 'temp_output')
 
     os.makedirs(temp_input_folder, exist_ok=True)
@@ -160,7 +160,8 @@ def process_single_svs_file(s3_bucket_input, s3_bucket_output, temp_dir, log_fil
     # List files in the S3 bucket
     try:
         result = subprocess.run(['aws', 's3', 'ls', s3_bucket_input + '/'], capture_output=True, text=True, check=True, timeout=60)
-        svs_files = [line.split()[-1] for line in result.stdout.splitlines() if line.strip().endswith('.svs')]
+        # Handle spaces in filenames by splitting with maxsplit=3 to get only 4 parts (date, time, size, filename)
+        svs_files = [line.split(maxsplit=3)[-1] for line in result.stdout.splitlines() if line.strip().endswith('.svs')]
     except subprocess.TimeoutExpired:
         print(f"Timeout occurred while listing files in {s3_bucket_input}")
         return
