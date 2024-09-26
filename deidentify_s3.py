@@ -103,7 +103,7 @@ def generate_unique_filename(folder_name, ext):
 
     folder_file_count[folder_name] += 1
 
-    unique_id = 375 + folder_file_count[folder_name]
+    unique_id = 601 + folder_file_count[folder_name]
     new_filename = f"DI_{folder_name}_{unique_id:04d}{ext}"
     return new_filename
 
@@ -140,7 +140,7 @@ def process_single_svs_file(s3_bucket_input, s3_bucket_output, temp_dir, log_fil
     """Process each SVS file one by one from the input S3 bucket."""
     global successful_files, failed_files
 
-    temp_input_folder = os.path.join(temp_dir, 'dombox3')
+    temp_input_folder = os.path.join(temp_dir, 'dombox61317')
     temp_output_folder = os.path.join(temp_dir, 'temp_output')
 
     os.makedirs(temp_input_folder, exist_ok=True)
