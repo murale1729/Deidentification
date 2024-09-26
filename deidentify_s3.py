@@ -20,7 +20,7 @@ failed_files = 0
 def delete_associated_image(slide_path, image_type):
     """Remove label or macro image from a given SVS file."""
     allowed_image_types = ['label', 'macro']
-    if image_type not in allowed image_types:
+    if image_type not in allowed_image_types:
         raise Exception('Invalid image type requested for deletion')
 
     with open(slide_path, 'r+b') as fp:
